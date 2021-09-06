@@ -29,9 +29,45 @@
 
             CreateConfigTitle(context);
             CreateFooter(context);
+
+            CreateGroup(context);
+            AddRoleAdminToAdminGroup(context);
             CreateUser(context);
 
+            AddUserToAdminGroup(context);
         }
+
+        private void AddRoleAdminToAdminGroup(TeduShopDbContext context)
+        {
+            if (!context.ApplicationRoleGroups.Any())
+            {
+                // add tedu to admin group
+                var adminGroup = context.ApplicationGroups.SingleOrDefault(x => x.Name == CommonConstants.Administrator);
+                var roleManager = new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(new TeduShopDbContext()));
+                var role = roleManager.Roles.SingleOrDefault(x => x.Name == "Admin");
+                context.ApplicationRoleGroups.Add(new ApplicationRoleGroup 
+                { 
+                    GroupId = adminGroup.ID,
+                    RoleId = role.Id
+                });
+                context.SaveChanges();
+            }
+        }
+
+        private void AddUserToAdminGroup(TeduShopDbContext context)
+        {
+            if (!context.ApplicationUserGroups.Any())
+            {
+                // add tedu to admin group
+                var adminGroup = context.ApplicationGroups.SingleOrDefault(x => x.Name == CommonConstants.Administrator);
+
+                var user = context.Users.SingleOrDefault(x => x.UserName == "tedu");
+                context.ApplicationUserGroups.Add(new ApplicationUserGroup { ApplicationGroup = adminGroup, ApplicationUser = user, GroupId = adminGroup.ID, UserId = user.Id });
+                context.SaveChanges();
+            }
+           
+        }
+
         private void CreateConfigTitle(TeduShopDbContext context)
         {
             if (!context.SystemConfigs.Any(x => x.Code == "HomeTitle"))
@@ -107,8 +143,22 @@
                 context.ProductCategories.AddRange(listProductCategory);
                 context.SaveChanges();
             }
-
         }
+
+        private void CreateGroup(TeduShopDbContext context)
+        {
+            if (!context.ApplicationGroups.Any())
+            {
+                var group = new ApplicationGroup
+                {
+                    Name = CommonConstants.Administrator,
+                    Description = CommonConstants.Administrator
+                };
+                context.ApplicationGroups.Add(group);
+                context.SaveChanges();
+            }
+        }
+
         private void CreateFooter(TeduShopDbContext context)
         {
             if (context.Footers.Count(x => x.ID == CommonConstants.DefaultFooterId) == 0)
